@@ -3,9 +3,11 @@ from __future__ import absolute_import
 
 # Reworking Christoph Schranz's Tweaker application into an Octoprint plugin.
 import logging
+import re
 
 import octoprint.plugin
 import octoprint.slicing
+import octoprint.filemanager
 
 from .MeshTweaker import Tweak
 from .FileHandler import FileHandler
@@ -86,7 +88,7 @@ class tweaker3(octoprint.plugin.SlicerPlugin):
         self._logger.info("Object Tweaked")
         try:
             my_file_handler.write_mesh(objs, info, machinecode_path,
-                                   "tweakstl")  # arguments.outputfile should include the file path
+                                   "asciistl")  # arguments.outputfile should include the file path
             self._logger.info("Wrote tweaked file to {}".format(machinecode_path))
             return True, dict(analysis={})
         except FileNotFoundError:
@@ -102,7 +104,21 @@ class tweaker3(octoprint.plugin.SlicerPlugin):
     def get_slicer_profiles(self, path):
         return dict([("default", self.get_slicer_default_profile())])
 
+    def remove_gcode_header(self, path, file_object, links=None, printer_profile=None, allow_overwrite=True, *args,
+                        **kwargs):
+        if not octoprint.filemanager.valid_file_type(path, type="stl"):
+            return file_object
 
+        return octoprint.filemanager.util.StreamWrapper(file_object.filename, GcodeHeaderStripper(file_object.stream()))
+
+class GcodeHeaderStripper(octoprint.filemanager.util.LineProcessorStream) :
+    def process_line(self, line):
+        if not len(line):
+            return None
+        if re.match(b"0,/^;Generated from [a-zA-Z0-9]/d", line):
+            return None
+
+        return line + "\r\n"
 __plugin_pythoncompat__ = ">=2.7,<4"  # python 2 and 3
 
 

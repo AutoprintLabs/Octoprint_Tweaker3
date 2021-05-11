@@ -140,20 +140,6 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
         #     #     FileHandler.rotate3MF(args.inputfile, args.outputfile, objs)
         #     raise TypeError('The 3mf output format is not implemented yet.')
 
-        if output_type == "asciistl":
-            # Create seperate files with rotated content. If an IDE supports multipart placement,
-            # set outname = outputfile
-            for part, content in objects.items():
-                mesh = content["mesh"]
-                filename = content["name"]
-
-                mesh = self.rotate_ascii_stl(info[part]["matrix"], mesh, filename)
-                if len(objects.keys()) == 1:
-                    outname = outputfile
-                else:
-                    outname = ".".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
-                with open(outname, 'w') as outfile:
-                    outfile.write(mesh)
 # Begin Autoprint Labs addition 
         if output_type == "asciistl":
             # Create seperate files with rotated content. If an IDE supports multipart placement,
@@ -172,8 +158,7 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
 # End Autoprint Labs addition
         else:  # binary STL, binary stl can't support multiparts
             # Create seperate files with rotated content.
-            header = "Tweaked on {}".format(time.strftime("%a %d %b %Y %H:%M:%S")
-                                            ).encode().ljust(79, b" ") + b"\n"
+
             for part, content in objects.items():
                 mesh = objects[part]["mesh"]
                 partlength = int(len(mesh) / 3)
@@ -185,7 +170,7 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
                     outname = ".".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
                 length = struct.pack("<I", partlength)
                 with open(outname, 'wb') as outfile:
-                    outfile.write(bytearray(header + length + b"".join(mesh)))
+                    outfile.write(bytearray(length + b"".join(mesh)))
 
     @staticmethod
     def rotate_3mf(*arg):
